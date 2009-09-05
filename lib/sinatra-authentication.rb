@@ -1,11 +1,7 @@
-require 'sinatra/base'
-require 'dm-core'
-require 'dm-timestamps'
-require 'dm-validations'
-require Pathname(__FILE__).dirname.expand_path + "models/user"
+%w( sinatra/base compass json rest_client).each { |f| require f }
 
 module SinatraAuthentication
-  VERSION = "0.0.1"
+  VERSION = "0.0.2"
 end
 
 module Sinatra
@@ -24,25 +20,6 @@ module Sinatra
       #you do not need to to do self.get/self.post when writing an extension
       #In fact, it doesn't work. You have to use the plain old sinatra DSL
 
-      get '/users' do
-        @users = User.all
-        if @users != []
-          haml get_view_as_string("index.haml"), :layout => use_layout?
-        else
-          redirect '/signup'
-        end
-      end
-
-      get '/users/:id' do
-        login_required
-
-        #INVESTIGATE
-        #
-        #WHY THE HECK WON'T GET RETURN ANYTHING?
-        #if I user User.get(params[:id]) it returns nil for some inexplicable reason
-        @user = User.first(:id => params[:id])
-        haml get_view_as_string("show.haml"), :layout => use_layout?
-      end
 
       #convenience for ajax but maybe entirely stupid and unnecesary
       get '/logged_in' do
@@ -58,12 +35,8 @@ module Sinatra
       end
 
       post '/login' do
-          if user = User.authenticate(params[:email], params[:password])
-            session[:user] = user.id
-            redirect '/'
-          else
-            redirect '/login'
-          end
+	  	session[:user] = authenticate(params[:token)
+		redirect '/'
       end
 
       get '/logout' do
@@ -72,60 +45,21 @@ module Sinatra
         redirect '/'
       end
 
-      get '/signup' do
-        haml get_view_as_string("signup.haml"), :layout => use_layout?
-      end
-
-      post '/signup' do
-        @user = User.new(params[:user])
-        if @user.save
-          session[:user] = @user.id
-          redirect '/'
-        else
-          session[:flash] = "failure!"
-          redirect '/'
-        end
-      end
-
-      get '/users/:id/edit' do
-        login_required
-        redirect "/users" unless current_user.admin? || current_user == params[:id]
-
-        @user = User.first(:id => params[:id])
-        haml get_view_as_string("edit.haml"), :layout => use_layout?
-      end
-
-      post '/users/:id/edit' do
-        login_required
-        redirect "/users" unless current_user.admin? || current_user == params[:id]
-
-        user = User.first(:id => params[:id])
-        user_attributes = params[:user]
-        if params[:user][:password] == ""
-            user_attributes.delete("password")
-            user_attributes.delete("password_confirmation")
-        end
-
-        if user.update_attributes(user_attributes)
-          redirect "/users/#{user.id}"
-        else
-          throw user.errors
-        end
-      end
-
-      get '/users/:id/delete' do
-        login_required
-        redirect "/users" unless current_user.admin? || current_user == params[:id]
-
-        user = User.first(:id => params[:id])
-        user.destroy
-        session[:flash] = "way to go, you deleted a user"
-        redirect '/'
-      end
     end
   end
 
   module Helpers
+  	def authenticate(token)
+		response = JSON.parse(
+			RestClient.post(
+				'https:://rpxnow.com/api/v2/auth_info', 
+				:token => token, 
+				'apiKey' => '', 
+				:format => 'json', :extended => 'false'))
+		return response if response['stat'] = 'ok'
+		return nil
+	end
+
     def login_required
       if session[:user]
         return true
@@ -137,11 +71,7 @@ module Sinatra
     end
 
     def current_user
-      if session[:user]
-        User.first(:id => session[:user])
-      else
-        GuestUser.new
-      end
+      session[:user]
     end
 
     def logged_in?
@@ -189,18 +119,4 @@ module Sinatra
   register LilAuthentication
 end
 
-class GuestUser
-  def guest?
-    true
-  end
-
-  def permission_level
-    0
-  end
-
-  # current_user.admin? returns false. current_user.has_a_baby? returns false.
-  # (which is a bit of an assumption I suppose)
-  def method_missing(m, *args)
-    return false
-  end
 end
