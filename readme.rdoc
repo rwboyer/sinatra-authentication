@@ -22,6 +22,8 @@ This plugin provides the following helper methods for your sinatra app:
 
 - login_required
 which you place at the beginning of any routes you want to be protected
+- priv_required
+same as above but requiring a specific role
 - current_user
 - logged_in?
 - render_login_logout(html_attributes)
@@ -32,3 +34,6 @@ renders the required javascript, included with the link render
 SIMPLE PERMISSIONS
 
 just a hash of 'displayName' and 'permision string' will work on something suitable later
+
+EXAMPLE
+test.rb is a minimal sinatra test app to illustrate usage
