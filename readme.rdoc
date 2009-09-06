@@ -36,4 +36,5 @@ SIMPLE PERMISSIONS
 just a hash of 'displayName' and 'permision string' will work on something suitable later
 
 EXAMPLE
+
 test.rb is a minimal sinatra test app to illustrate usage
