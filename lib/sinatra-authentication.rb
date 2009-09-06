@@ -5,7 +5,7 @@ module SinatraAuthentication
 end
 
 module Sinatra
-  module LilAuthentication
+  module OpenIDAuthentication
     def self.registered(app)
       #INVESTIGATE
       #the possibility of sinatra having an array of view_paths to load from
@@ -23,9 +23,6 @@ module Sinatra
 
       #convenience for ajax but maybe entirely stupid and unnecesary
       get '/logged_in' do
-	  	puts "GET - logged_in"
-	  	puts session[:user].class
-		puts session[:user].inspect
         if session[:user]
           "true"
         else
@@ -34,26 +31,17 @@ module Sinatra
       end
 
       get '/login' do
-	  	puts "GET - /login"
-	  	puts session[:user].class
-		puts session[:user].inspect
         "You must login using OpenID"
       end
 
       post '/login' do
 	  	session[:user] = authenticate(params[:token])
-	  	puts "POST - /login"
-	  	puts session[:user].class
-		puts session[:user].inspect
 		redirect '/'
       end
 
       get '/logout' do
         session[:user] = nil
         @message = "in case it weren't obvious, you've logged out"
-	  	puts "GET - /logout"
-	  	puts session[:user].class
-		puts session[:user].inspect
         redirect '/'
       end
 
@@ -78,6 +66,7 @@ module Sinatra
 
     def login_required
       if session[:user]
+	  	puts session[:user].inspect
         return true
       else
         session[:return_to] = request.fullpath
@@ -85,6 +74,20 @@ module Sinatra
         return false
       end
     end
+
+	def admin_required
+		if s = session[:user]
+			puts options.rpxadmins.inspect
+			puts s.class
+			puts s.inspect
+			puts s['profile']['displayName']
+			if options.rpxadmins[s['profile']['displayName']]
+				return true
+			end 
+		end
+		redirect '/'
+		return false
+	end
 
     def current_user
       session[:user]
@@ -96,17 +99,6 @@ module Sinatra
 
     def use_layout?
       !request.xhr?
-    end
-
-    #BECAUSE sinatra 9.1.1 can't load views from different paths properly
-    def get_view_as_string(filename)
-      view = options.lil_authentication_view_path + filename
-      data = ""
-      f = File.open(view, "r")
-      f.each_line do |line|
-        data += line
-      end
-      return data
     end
 
     def render_login_logout()
@@ -124,7 +116,7 @@ module Sinatra
 
   end
 
-  register LilAuthentication
+  register OpenIDAuthentication
 
 end
 
