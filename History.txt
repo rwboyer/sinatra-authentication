@@ -2,3 +2,6 @@
 
 * 1 major enhancement:
   * Initial release
+
+* 2 major hack:
+  * no database, no views, no forms, just open ID and and admins list
