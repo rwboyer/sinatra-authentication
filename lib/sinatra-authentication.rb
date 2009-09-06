@@ -67,7 +67,8 @@ module Sinatra
 			RestClient.post(
 				'https://rpxnow.com/api/v2/auth_info', 
 				:token => token, 
-				'apiKey' => '45ba29026c158111481c53d20dd27fead98130f1', 
+				#'apiKey' => '45ba29026c158111481c53d20dd27fead98130f1', 
+				'apiKey' => options.rpxapikey, 
 				:format => 'json', :extended => 'false'))
 		puts response.class
 		puts response.inspect
@@ -112,7 +113,7 @@ module Sinatra
 		if logged_in?
 			"<a href='/logout'> Logout </a>"
 		else
-			"<a class = 'rpxnow' onclick='return false;' href='https://compassfail.rpxnow.com/openid/v2/signin?token_url=http://localhost:4567/login'> Login </a>" + render_js
+			"<a class = 'rpxnow' onclick='return false;' href='https://#{options.rpxappname}.rpxnow.com/openid/v2/signin?token_url=http://#{options.rpxserver}/login'> Login </a>" + render_js
 		end
     end
 
