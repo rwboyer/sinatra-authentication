@@ -64,28 +64,23 @@ module Sinatra
 		return nil
 	end
 
-    def login_required
+    def login_required(failpage = '/')
       if session[:user]
-	  	puts session[:user].inspect
         return true
       else
         session[:return_to] = request.fullpath
-        redirect '/login'
+        redirect failpage
         return false
       end
     end
 
-	def admin_required
+	def priv_required(priv = 'admin', failpage = '/')
 		if s = session[:user]
-			puts options.rpxadmins.inspect
-			puts s.class
-			puts s.inspect
-			puts s['profile']['displayName']
-			if options.rpxadmins[s['profile']['displayName']]
+			if options.rpxadmins[s['profile']['displayName']] == priv
 				return true
-			end 
-		end
-		redirect '/'
+			end
+		end 
+		redirect failpage
 		return false
 	end
 
