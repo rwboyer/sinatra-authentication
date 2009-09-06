@@ -23,6 +23,9 @@ module Sinatra
 
       #convenience for ajax but maybe entirely stupid and unnecesary
       get '/logged_in' do
+	  	puts "GET - logged_in"
+	  	puts session[:user].class
+		puts session[:user].inspect
         if session[:user]
           "true"
         else
@@ -31,17 +34,26 @@ module Sinatra
       end
 
       get '/login' do
-        haml get_view_as_string("login.haml"), :layout => use_layout?
+	  	puts "GET - /login"
+	  	puts session[:user].class
+		puts session[:user].inspect
+        "You must login using OpenID"
       end
 
       post '/login' do
-	  	session[:user] = authenticate(params[:token)
+	  	session[:user] = authenticate(params[:token])
+	  	puts "POST - /login"
+	  	puts session[:user].class
+		puts session[:user].inspect
 		redirect '/'
       end
 
       get '/logout' do
         session[:user] = nil
         @message = "in case it weren't obvious, you've logged out"
+	  	puts "GET - /logout"
+	  	puts session[:user].class
+		puts session[:user].inspect
         redirect '/'
       end
 
@@ -50,12 +62,15 @@ module Sinatra
 
   module Helpers
   	def authenticate(token)
+		puts "Auth call..."
 		response = JSON.parse(
 			RestClient.post(
-				'https:://rpxnow.com/api/v2/auth_info', 
+				'https://rpxnow.com/api/v2/auth_info', 
 				:token => token, 
-				'apiKey' => '', 
+				'apiKey' => '45ba29026c158111481c53d20dd27fead98130f1', 
 				:format => 'json', :extended => 'false'))
+		puts response.class
+		puts response.inspect
 		return response if response['stat'] = 'ok'
 		return nil
 	end
@@ -93,30 +108,22 @@ module Sinatra
       return data
     end
 
-    def render_login_logout(html_attributes = {:class => ""})
-    css_classes = html_attributes.delete(:class)
-    parameters = ''
-    html_attributes.each_pair do |attribute, value|
-      parameters += "#{attribute}=\"#{value}\" "
+    def render_login_logout()
+		if logged_in?
+			"<a href='/logout'> Logout </a>"
+		else
+			"<a class = 'rpxnow' onclick='return false;' href='https://compassfail.rpxnow.com/openid/v2/signin?token_url=http://localhost:4567/login'> Login </a>" + render_js
+		end
     end
 
-      result = "<div id='sinatra-authentication-login-logout' >"
-      if logged_in?
-        logout_parameters = html_attributes
-        # a tad janky?
-        logout_parameters.delete(:rel)
-        result += "<a href='/users/#{current_user.id}/edit' class='#{css_classes} sinatra-authentication-edit' #{parameters}>edit account</a> "
-        result += "<a href='/logout' class='#{css_classes} sinatra-authentication-logout' #{logout_parameters}>logout</a>"
-      else
-        result += "<a href='/signup' class='#{css_classes} sinatra-authentication-signup' #{parameters}>signup</a> "
-        result += "<a href='/login' class='#{css_classes} sinatra-authentication-login' #{parameters}>login</a>"
-      end
+	def render_js()
+		"<script src='https://rpxnow.com/openid/v2/widget' type='text/javascript'>" +
+		"<script type='text/javascript'> RPXNOW.overlay = true; RPXNOW.language_preference ='en'; </script>"
+	end
 
-      result += "</div>"
-    end
   end
 
   register LilAuthentication
-end
 
 end
+
